@@ -1,33 +1,6 @@
 // Dummy Database
 
-export interface RobotData {
-  robot_id: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  battery_percentage: number;
-  timestamp: string;
-}
-
-export interface RobotData {
-  robot_id: string;
-  position: { x: number; y: number };
-  battery_percentage: number;
-  timestamp: string;
-}
-
-export interface RobotCommand {
-  command_id: string;
-  command:
-    | "MOVE_FORWARD"
-    | "MOVE_BACKWARD"
-    | "TURN_LEFT"
-    | "TURN_RIGHT"
-    | "STOP";
-  status: "PENDING" | "EXECUTED";
-  timestamp: string;
-}
+import type { RobotCommand, RobotData } from "../types";
 
 export const robotStorage = new Map<string, RobotData>();
 

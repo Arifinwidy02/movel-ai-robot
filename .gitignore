@@ -1,14 +1,22 @@
-# Mengabaikan semua node_modules di sub-folder tingkat mana pun
+# --- Dependencies ---
 **/node_modules/
 .bun/
+**/bun.lockb
 
-# Mengabaikan environment variables agar aman
+# --- Next.js Build & Cache (Ini Tersangkanya!) ---
+**/.next/
+**/out/
+
+# --- Environment Variables ---
 **.env
 **.env.local
+**.env.production
 
-# Mengabaikan log sampah bawaan Mac
+# --- Operating System Logs ---
+*.log
 .DS_Store
+Thumbs.db
 
-# Mengabaikan hasil build/dist jika ada
+# --- Build Outputs ---
 **/dist/
 **/build/

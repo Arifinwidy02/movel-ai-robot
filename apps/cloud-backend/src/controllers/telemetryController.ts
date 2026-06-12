@@ -2,9 +2,11 @@ import { type Request, type Response } from "express";
 import {
   commandQueueStorage,
   robotStorage,
-  type RobotCommand,
-  type RobotData,
+  // type RobotCommand,
+  // type RobotData,
 } from "../state/robotState";
+import { io } from "../server";
+import type { RobotCommand, RobotData } from "../types";
 
 export const saveTelemetry = async (
   req: Request,
@@ -32,7 +34,7 @@ export const saveTelemetry = async (
 
     // Simpan/Overwrite data di dalam RAM memory
     robotStorage.set(robot_id, updatedData);
-
+    io.emit("telemetry_update", updatedData);
     res
       .status(200)
       .json({ success: true, message: "Telemetry updated successfully" });
@@ -71,6 +73,7 @@ export const addRobotCommand = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    console.log("🚀 ~ addRobotCommand ~ req:", req);
     const { command } = req.body;
     const validCommands = [
       "MOVE_FORWARD",
