@@ -8,6 +8,156 @@ interface TelemetryPanelProps {
   isOnline: boolean;
 }
 
+const S = {
+  section: {
+    backgroundColor: "#111726",
+    border: "1px solid rgba(30,41,59,0.8)",
+    borderRadius: "16px",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "space-between",
+    gap: "16px",
+    boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+    height: "100%",
+    boxSizing: "border-box" as const,
+  },
+  selectorRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+    marginBottom: "24px",
+    backgroundColor: "rgba(15,23,42,0.5)",
+    padding: "8px",
+    borderRadius: "12px",
+    border: "1px solid #1e293b",
+  },
+  select: {
+    backgroundColor: "transparent",
+    fontSize: "14px",
+    fontWeight: 600,
+    padding: "4px 8px",
+    outline: "none",
+    cursor: "pointer",
+    color: "#cbd5e1",
+    width: "100%",
+    border: "none",
+  },
+  option: {
+    backgroundColor: "#111726",
+  },
+  button: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    backgroundColor: "#2563eb",
+    fontSize: "12px",
+    fontWeight: 700,
+    color: "#fff",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: "none",
+    cursor: "pointer",
+    boxShadow: "0 4px 6px -1px rgba(37,99,235,0.2)",
+    whiteSpace: "nowrap" as const,
+    transition: "background-color 0.15s",
+  },
+  cardsWrap: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "16px",
+  },
+  card: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+    backgroundColor: "rgba(15,23,42,0.3)",
+    padding: "12px",
+    borderRadius: "12px",
+    border: "1px solid rgba(30,41,59,0.4)",
+  },
+  iconBox: (color: string, bgAlpha: string) => ({
+    padding: "10px",
+    backgroundColor: bgAlpha,
+    borderRadius: "12px",
+    color,
+  }),
+  cardLabel: {
+    fontSize: "10px",
+    textTransform: "uppercase" as const,
+    fontWeight: 700,
+    letterSpacing: "0.05em",
+    color: "#64748b",
+  },
+  batteryRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+  },
+  batteryValue: {
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#4ade80",
+  },
+  barBg: {
+    width: "100%",
+    backgroundColor: "#1e293b",
+    height: "8px",
+    borderRadius: "9999px",
+    overflow: "hidden",
+  },
+  barFill: (pct: number) => ({
+    backgroundColor: "#22c55e",
+    height: "100%",
+    transition: "width 0.3s",
+    borderRadius: "9999px",
+    width: `${pct}%`,
+  }),
+  posRow: {
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#cbd5e1",
+  },
+  posVal: {
+    color: "#60a5fa",
+    fontFamily: "monospace",
+  },
+  robotLabel: {
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "#cbd5e1",
+  },
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderTop: "1px solid rgba(30,41,59,0.6)",
+    paddingTop: "12px",
+    fontSize: "12px",
+  },
+  footerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    color: "#94a3b8",
+  },
+  statusText: (online: boolean) => ({
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontWeight: 700,
+    color: online ? "#4ade80" : "#f87171",
+  }),
+  statusDot: (online: boolean) => ({
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    backgroundColor: online ? "#4ade80" : "#f87171",
+    animation: online ? "pulse 2s infinite" : "none",
+  }),
+} as const;
+
 export default function TelemetryPanel({
   robotId,
   setRobotId,
@@ -15,103 +165,76 @@ export default function TelemetryPanel({
   isOnline,
 }: TelemetryPanelProps) {
   return (
-    <section className="bg-[#111726] border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between gap-4 shadow-xl h-full">
+    <section style={S.section}>
       <div>
-        {/* ROBOT ID SELECTION */}
-        <div className="flex items-center justify-between gap-3 mb-6 bg-slate-900/50 p-2 rounded-xl border border-slate-800">
+        <div style={S.selectorRow}>
           <select
             value={robotId}
             onChange={(e) => setRobotId(e.target.value)}
-            className="bg-transparent text-sm font-semibold px-2 py-1 outline-none cursor-pointer text-slate-300 w-full"
+            style={S.select}
           >
-            <option value="robot-1" className="bg-[#111726]">
+            <option value="robot-1" style={S.option}>
               ROBOT-01
             </option>
-            <option value="robot-2" className="bg-[#111726]">
+            <option value="robot-2" style={S.option}>
               ROBOT-02
             </option>
           </select>
-          <button className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 transition-all text-xs font-bold text-white px-3 py-2 rounded-lg shadow-md shadow-blue-600/20 whitespace-nowrap">
-            <RefreshCw className="w-3.5 h-3.5" /> GANTI ID
+          <button style={S.button}>
+            <RefreshCw size={14} /> GANTI ID
           </button>
         </div>
 
-        {/* TELEMETRY CARDS */}
-        <div className="space-y-4">
-          {/* BATTERY */}
-          <div className="flex items-center gap-4 bg-slate-900/30 p-3 rounded-xl border border-slate-800/40">
-            <div className="p-2.5 bg-green-500/10 rounded-xl text-green-500">
-              <Battery className="w-5 h-5" />
+        <div style={S.cardsWrap}>
+          <div style={S.card}>
+            <div style={S.iconBox("#22c55e", "rgba(34,197,94,0.1)")}>
+              <Battery size={20} />
             </div>
-            <div className="flex-1">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                Battery Health
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-green-400">
+            <div style={{ flex: 1 }}>
+              <p style={S.cardLabel}>Battery Health</p>
+              <div style={S.batteryRow}>
+                <span style={S.batteryValue}>
                   {telemetry.battery_percentage}%
                 </span>
-                <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="bg-green-500 h-full transition-all duration-300"
-                    style={{ width: `${telemetry.battery_percentage}%` }}
-                  ></div>
+                <div style={S.barBg}>
+                  <div style={S.barFill(telemetry.battery_percentage)}></div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* POSITION */}
-          <div className="flex items-center gap-4 bg-slate-900/30 p-3 rounded-xl border border-slate-800/40">
-            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-500">
-              <MapPin className="w-5 h-5" />
+          <div style={S.card}>
+            <div style={S.iconBox("#3b82f6", "rgba(59,130,246,0.1)")}>
+              <MapPin size={20} />
             </div>
             <div>
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                Posisi
-              </p>
-              <p className="text-sm font-bold text-slate-300">
-                X:{" "}
-                <span className="text-blue-400 font-mono">
-                  {telemetry.position.x.toFixed(2)}m
-                </span>{" "}
-                &nbsp; Y:{" "}
-                <span className="text-blue-400 font-mono">
-                  {telemetry.position.y.toFixed(2)}m
-                </span>
+              <p style={S.cardLabel}>Posisi</p>
+              <p style={S.posRow}>
+                X: <span style={S.posVal}>{telemetry.position.x.toFixed(2)}m</span>
+                &nbsp;&nbsp;Y: <span style={S.posVal}>{telemetry.position.y.toFixed(2)}m</span>
               </p>
             </div>
           </div>
 
-          {/* NAME */}
-          <div className="flex items-center gap-4 bg-slate-900/30 p-3 rounded-xl border border-slate-800/40">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-500">
-              <Bot className="w-5 h-5" />
+          <div style={S.card}>
+            <div style={S.iconBox("#a855f7", "rgba(168,85,247,0.1)")}>
+              <Bot size={20} />
             </div>
             <div>
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
-                Nama Robot
-              </p>
-              <p className="text-sm font-bold text-slate-300">
-                Explorer Bot ({robotId})
-              </p>
+              <p style={S.cardLabel}>Nama Robot</p>
+              <p style={S.robotLabel}>Explorer Bot ({robotId})</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* STATUS FOOTER */}
-      <div className="flex items-center justify-between border-t border-slate-800/60 pt-3 text-xs">
-        <div className="flex items-center gap-2 text-slate-400">
-          <Info className="w-4 h-4 text-slate-500" /> <span>Status</span>
+      <div style={S.footer}>
+        <div style={S.footerLeft}>
+          <Info size={16} color="#64748b" /> <span>Status</span>
         </div>
-        <span
-          className={`flex items-center gap-1.5 font-bold ${isOnline ? "text-green-400" : "text-red-400"}`}
-        >
+        <span style={S.statusText(isOnline)}>
           {isOnline ? "Online" : "Offline"}
-          <span
-            className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-400 animate-pulse" : "bg-red-400"}`}
-          ></span>
+          <span style={S.statusDot(isOnline)}></span>
         </span>
       </div>
     </section>

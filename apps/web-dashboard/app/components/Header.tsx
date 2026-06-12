@@ -2,9 +2,24 @@ import { Bot } from "lucide-react";
 
 export default function Header() {
   return (
-    <header className="flex items-center gap-3 mb-6">
-      <Bot className="w-8 h-8 text-blue-500" />
-      <h1 className="text-xl font-bold tracking-wider uppercase text-slate-200">
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        marginBottom: "24px",
+      }}
+    >
+      <Bot size={32} color="#3b82f6" />
+      <h1
+        style={{
+          fontSize: "20px",
+          fontWeight: 700,
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+          color: "#e2e8f0",
+        }}
+      >
         Robot Dashboard
       </h1>
     </header>

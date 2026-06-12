@@ -9,7 +9,76 @@ import TelemetryPanel from "./components/TelemetryPanel";
 import RobotViewer from "./components/RobotViewer";
 import VirtualKeyboard from "./components/VirtualKeyboard";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "";
+
+const S = {
+  main: {
+    minHeight: "100vh",
+    backgroundColor: "#0b0f19",
+    color: "#f1f5f9",
+    padding: "24px",
+    display: "flex",
+    flexDirection: "column" as const,
+    justifyContent: "space-between",
+    fontFamily: "Arial, Helvetica, sans-serif",
+  },
+  loadingWrap: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#94a3b8",
+    gap: "8px",
+  },
+  spinner: {
+    width: "32px",
+    height: "32px",
+    border: "4px solid #3b82f6",
+    borderTopColor: "transparent",
+    borderRadius: "50%",
+    animation: "spin 1s linear infinite",
+  },
+  loadingText: {
+    fontSize: "14px",
+  },
+  errorWrap: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#f87171",
+    padding: "16px",
+    textAlign: "center" as const,
+  },
+  errorTitle: {
+    fontWeight: 600,
+    fontSize: "18px",
+  },
+  errorDetail: {
+    fontSize: "12px",
+    color: "#64748b",
+    marginTop: "4px",
+    maxWidth: "448px",
+  },
+  contentGrid: {
+    display: "flex",
+    flexWrap: "wrap" as const,
+    gap: "24px",
+    alignItems: "stretch",
+    flex: 1,
+    marginBottom: "24px",
+  },
+  leftPanel: {
+    flex: "1 1 300px",
+    minWidth: "280px",
+  },
+  rightPanel: {
+    flex: "2 1 500px",
+    minWidth: "350px",
+  },
+} as const;
 
 export default function RobotDashboard() {
   const [robotId, setRobotId] = useState<string>("robot-1");
@@ -25,7 +94,7 @@ export default function RobotDashboard() {
   });
 
   const robotIdRef = useRef(robotId);
-  const staleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const staleRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     robotIdRef.current = robotId;
@@ -86,20 +155,10 @@ export default function RobotDashboard() {
   useEffect(() => {
     const socket: Socket = io(BACKEND_URL);
 
-    const resetStaleTimer = () => {
-      if (staleTimerRef.current) {
-        clearTimeout(staleTimerRef.current);
-      }
-
-      staleTimerRef.current = setTimeout(() => {
-        console.warn("⚠️ Telemetri robot terputus/stale lebih dari 5 detik!");
-        setIsOnline(false);
-      }, 5000);
-    };
-
     socket.on("connect", () => {
       setIsOnline(true);
-      resetStaleTimer();
+      clearTimeout(staleRef.current);
+      staleRef.current = setTimeout(() => setIsOnline(false), 5000);
     });
 
     socket.on("telemetry_update", (data: RobotTelemetry) => {
@@ -107,18 +166,19 @@ export default function RobotDashboard() {
       if (incomingRobotId === robotId) {
         setTelemetry(data);
         setIsOnline(true);
-        resetStaleTimer();
+        clearTimeout(staleRef.current);
+        staleRef.current = setTimeout(() => setIsOnline(false), 5000);
       }
     });
 
     socket.on("disconnect", () => {
       setIsOnline(false);
-      if (staleTimerRef.current) clearTimeout(staleTimerRef.current);
+      clearTimeout(staleRef.current);
     });
 
     return () => {
       socket.disconnect();
-      if (staleTimerRef.current) clearTimeout(staleTimerRef.current);
+      clearTimeout(staleRef.current);
     };
   }, [robotId]);
 
@@ -151,23 +211,23 @@ export default function RobotDashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0b0f19] text-slate-100 p-6 flex flex-col justify-between font-sans">
+    <main style={S.main}>
       <Header />
 
       {isLoading ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm">Menghubungkan ke sistem robotik...</p>
+        <div style={S.loadingWrap}>
+          <div style={S.spinner}></div>
+          <p style={S.loadingText}>Menghubungkan ke sistem robotik...</p>
         </div>
       ) : error ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-red-400 p-4 text-center">
-          <p className="font-semibold text-lg">⚠️ Gangguan Koneksi API</p>
-          <p className="text-xs text-slate-500 mt-1 max-w-md">{error}</p>
+        <div style={S.errorWrap}>
+          <p style={S.errorTitle}>⚠️ Gangguan Koneksi API</p>
+          <p style={S.errorDetail}>{error}</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch flex-1 mb-6">
-            <div className="md:col-span-4">
+          <div style={S.contentGrid}>
+            <div style={S.leftPanel}>
               <TelemetryPanel
                 robotId={robotId}
                 setRobotId={setRobotId}
@@ -175,8 +235,8 @@ export default function RobotDashboard() {
                 isOnline={isOnline}
               />
             </div>
-            <div className="md:col-span-8">
-              <RobotViewer />
+            <div style={S.rightPanel}>
+              <RobotViewer telemetry={telemetry} />
             </div>
           </div>
 
