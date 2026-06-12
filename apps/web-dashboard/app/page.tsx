@@ -4,18 +4,19 @@ import { useEffect, useState, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { RobotTelemetry } from "./types";
 
-// Import Komponen SOLID
 import Header from "./components/Header";
 import TelemetryPanel from "./components/TelemetryPanel";
 import RobotViewer from "./components/RobotViewer";
 import VirtualKeyboard from "./components/VirtualKeyboard";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
 export default function RobotDashboard() {
   const [robotId, setRobotId] = useState<string>("robot-1");
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Untuk loading state awal
-  const [error, setError] = useState<string | null>(null); // Untuk error state kegagalan API
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<RobotTelemetry>({
     robot_id: "robot-1",
     position: { x: 0.0, y: 0.0 },
@@ -23,29 +24,24 @@ export default function RobotDashboard() {
     timestamp: new Date().toISOString(),
   });
 
-  // Gunakan useRef untuk mengunci nilai robotId agar terhindar dari closure issue di listener
   const robotIdRef = useRef(robotId);
   const staleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sinkronkan isi ref tiap kali state robotId berubah
   useEffect(() => {
     robotIdRef.current = robotId;
   }, [robotId]);
 
-  // --- 1. INITIAL STATE FETCHING (GET /api/robot/state) ---
   useEffect(() => {
     const fetchInitialState = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Endpoint disesuaikan dengan requirement PDF halaman 4
-        const response = await fetch("http://localhost:4000/api/robot/state");
+        const response = await fetch(`${BACKEND_URL}/api/robot/state`);
         if (!response.ok) {
           throw new Error(`Gagal mengambil data awal: ${response.statusText}`);
         }
         const data = await response.json();
 
-        // Pastikan struktur data sesuai sebelum dipasang ke state
         if (data) {
           setTelemetry({
             robot_id: data.robot_id || robotId,
@@ -67,12 +63,9 @@ export default function RobotDashboard() {
     fetchInitialState();
   }, [robotId]);
 
-  // --- 2. API COMMAND SENDER (POST /api/robot/command) ---
   const sendCommand = async (action: string) => {
-    const targetRobotId = robotIdRef.current;
     try {
-      // Menembak endpoint command sesuai dengan mandat requirement PDF halaman 4
-      const response = await fetch("http://localhost:4000/api/robot/command", {
+      const response = await fetch(`${BACKEND_URL}/api/robot/command`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -90,17 +83,14 @@ export default function RobotDashboard() {
     }
   };
 
-  // --- 3. WEBSOCKET LOGIC & STALE HANDLING (5 SECONDS TIMEOUT) ---
   useEffect(() => {
-    const socket: Socket = io("http://localhost:4000");
+    const socket: Socket = io(BACKEND_URL);
 
-    // Fungsi pembantu untuk me-reset detektor stale (heartbeat) tiap kali data masuk
     const resetStaleTimer = () => {
       if (staleTimerRef.current) {
         clearTimeout(staleTimerRef.current);
       }
 
-      // Sesuai requirement halaman 5: Tandai stale jika tidak ada update selama 5 detik
       staleTimerRef.current = setTimeout(() => {
         console.warn("⚠️ Telemetri robot terputus/stale lebih dari 5 detik!");
         setIsOnline(false);
@@ -117,7 +107,7 @@ export default function RobotDashboard() {
       if (incomingRobotId === robotId) {
         setTelemetry(data);
         setIsOnline(true);
-        resetStaleTimer(); // Segarkan kembali timer setiap kali mendapat broadcast data
+        resetStaleTimer();
       }
     });
 
@@ -132,7 +122,6 @@ export default function RobotDashboard() {
     };
   }, [robotId]);
 
-  // --- 4. PHYSICAL KEYBOARD LISTENERS ---
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
@@ -140,7 +129,7 @@ export default function RobotDashboard() {
       const key = e.key.toLowerCase();
       if (["w", "a", "s", "d"].includes(key)) {
         setPressedKey(key);
-        sendCommand(key); // Kirim w, a, s, d langsung berformat huruf kecil
+        sendCommand(key);
       }
     };
 
@@ -148,7 +137,7 @@ export default function RobotDashboard() {
       const key = e.key.toLowerCase();
       if (["w", "a", "s", "d"].includes(key)) {
         setPressedKey(null);
-        sendCommand("STOP"); // Menghentikan robot saat tombol dilepas
+        sendCommand("STOP");
       }
     };
 
@@ -165,7 +154,6 @@ export default function RobotDashboard() {
     <main className="min-h-screen bg-[#0b0f19] text-slate-100 p-6 flex flex-col justify-between font-sans">
       <Header />
 
-      {/* Menampilkan Loading State atau Error State sesuai kriteria halaman 5 */}
       {isLoading ? (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -178,14 +166,13 @@ export default function RobotDashboard() {
         </div>
       ) : (
         <>
-          {/* TOP REGION */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch flex-1 mb-6">
             <div className="md:col-span-4">
               <TelemetryPanel
                 robotId={robotId}
                 setRobotId={setRobotId}
                 telemetry={telemetry}
-                isOnline={isOnline} // State ini otomatis berubah redup/stale jika terputus 5 detik
+                isOnline={isOnline}
               />
             </div>
             <div className="md:col-span-8">
@@ -193,7 +180,6 @@ export default function RobotDashboard() {
             </div>
           </div>
 
-          {/* BOTTOM REGION */}
           <VirtualKeyboard pressedKey={pressedKey} />
         </>
       )}

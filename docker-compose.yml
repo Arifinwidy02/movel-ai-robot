@@ -1,0 +1,66 @@
+version: "3.7"
+
+services:
+  web-ros:
+    image: registry.gitlab.com/movelai_public/assignment/web_ros:1.0.0
+    container_name: web-ros
+    ports:
+      - "9090:9090"
+    user: movelros
+    environment:
+      MOVEL_MODE: deployment
+      AUX_MODE: new
+      DISPLAY: ":0"
+      QT_X11_NO_MITSHM: 1
+      QT_GRAPHICSSYSTEM: native
+      ROSCONSOLE_STDOUT_LINE_BUFFERED: 1
+    entrypoint: bash -c 'source /ros_entrypoint.sh && roslaunch pose_pub_sub assignment.launch'
+    networks:
+      - movel-net
+
+  cloud-backend:
+    build:
+      context: ./apps/cloud-backend
+    container_name: cloud-backend
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+    depends_on:
+      - web-ros
+    networks:
+      - movel-net
+
+  ros-plugin:
+    build:
+      context: ./apps/ros-plugin
+    container_name: ros-plugin
+    environment:
+      ROS_BRIDGE_URL: ws://web-ros:9090
+      BACKEND_URL: http://cloud-backend:4000
+    depends_on:
+      web-ros:
+        condition: service_started
+      cloud-backend:
+        condition: service_started
+    networks:
+      - movel-net
+
+  web-dashboard:
+    build:
+      context: ./apps/web-dashboard
+      args:
+        NEXT_PUBLIC_BACKEND_URL: http://localhost:4000
+    container_name: web-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:4000
+    depends_on:
+      - cloud-backend
+    networks:
+      - movel-net
+
+networks:
+  movel-net:
+    driver: bridge

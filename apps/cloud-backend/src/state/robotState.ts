@@ -1,5 +1,3 @@
-// Dummy Database
-
 import type { RobotCommand, RobotData } from "../types";
 
 export const robotStorage = new Map<string, RobotData>();
@@ -14,3 +12,15 @@ robotStorage.set("robot-1", {
 export const commandQueueStorage = new Map<string, RobotCommand[]>();
 
 commandQueueStorage.set("robot-1", []);
+
+export let lastTelemetryAt: string | null = null;
+
+export let pluginConnected = false;
+
+export function updatePluginStatus(connected: boolean) {
+  pluginConnected = connected;
+}
+
+export function updateLastTelemetryAt(timestamp: string) {
+  lastTelemetryAt = timestamp;
+}

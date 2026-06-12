@@ -2,8 +2,8 @@ import { type Request, type Response } from "express";
 import {
   commandQueueStorage,
   robotStorage,
-  // type RobotCommand,
-  // type RobotData,
+  updateLastTelemetryAt,
+  updatePluginStatus,
 } from "../state/robotState";
 import { io } from "../server";
 import type { RobotCommand, RobotData } from "../types";
@@ -14,13 +14,15 @@ export const saveTelemetry = async (
 ): Promise<void> => {
   try {
     const { robot_id, position, battery_percentage, timestamp } = req.body;
-    // Validasi sederhana memastikan data tidak kosong
+
     if (!robot_id || !position) {
       res
         .status(400)
         .json({ success: false, message: "Missing required fields" });
       return;
     }
+
+    const ts = timestamp || new Date().toISOString();
 
     const updatedData: RobotData = {
       robot_id,
@@ -29,11 +31,12 @@ export const saveTelemetry = async (
         y: Number(position.y) || 0.0,
       },
       battery_percentage: Number(battery_percentage) || 0.0,
-      timestamp: timestamp || new Date().toISOString(),
+      timestamp: ts,
     };
 
-    // Simpan/Overwrite data di dalam RAM memory
     robotStorage.set(robot_id, updatedData);
+    updateLastTelemetryAt(ts);
+    updatePluginStatus(true);
     io.emit("telemetry_update", updatedData);
     res
       .status(200)
@@ -43,25 +46,22 @@ export const saveTelemetry = async (
   }
 };
 
-export const getRobotStatus = async (
+export const getRobotState = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
   try {
-    const { id } = req.params;
-    if (!id || typeof id !== "string") {
-      res
-        .status(400)
-        .json({ success: false, message: "Invalid or missing Robot ID" });
-      return;
-    }
-
+    const id = (req.params.id as string) || "robot-1";
     const robot = robotStorage.get(id);
     if (!robot) {
       res.status(404).json({ success: false, message: "Robot not found" });
       return;
     }
-    res.status(200).json({ success: true, data: robot });
+    if (req.params.id) {
+      res.status(200).json({ success: true, data: robot });
+    } else {
+      res.status(200).json(robot);
+    }
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -73,15 +73,8 @@ export const addRobotCommand = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    console.log("🚀 ~ addRobotCommand ~ req:", req);
     const { command } = req.body;
-    const validCommands = [
-      "MOVE_FORWARD",
-      "MOVE_BACKWARD",
-      "TURN_LEFT",
-      "TURN_RIGHT",
-      "STOP",
-    ];
+    const validCommands = ["w", "a", "s", "d", "STOP"];
 
     if (
       !id ||
@@ -91,22 +84,63 @@ export const addRobotCommand = async (
     ) {
       res.status(400).json({
         success: false,
-        message: "Invalid robot ID or unsupportted movement command",
+        message: "Invalid robot ID or unsupported movement command. Allowed: w, a, s, d, STOP",
       });
       return;
     }
+
     const newCommand: RobotCommand = {
       command_id: `cmd-${Math.random().toString(36).substr(2, 9)}`,
-      command: command as any,
+      command,
       status: "PENDING",
       timestamp: new Date().toISOString(),
     };
-    // Get the old queue
+
     const currentQueue = commandQueueStorage.get(id) || [];
     currentQueue.push(newCommand);
     commandQueueStorage.set(id, currentQueue);
     console.log(
       `📥 [COMMAND RECEIVED] Perintah '${command}' dimasukkan ke antrean ${id}`,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Command queued successfully",
+      data: newCommand,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const sendRobotCommand = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const { command } = req.body;
+    const validCommands = ["w", "a", "s", "d", "STOP"];
+
+    if (!command || !validCommands.includes(command)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid command. Allowed: w, a, s, d, STOP",
+      });
+      return;
+    }
+
+    const newCommand: RobotCommand = {
+      command_id: `cmd-${Math.random().toString(36).substr(2, 9)}`,
+      command,
+      status: "PENDING",
+      timestamp: new Date().toISOString(),
+    };
+
+    const currentQueue = commandQueueStorage.get("robot-1") || [];
+    currentQueue.push(newCommand);
+    commandQueueStorage.set("robot-1", currentQueue);
+    console.log(
+      `📥 [COMMAND RECEIVED] Perintah '${command}' dimasukkan ke antrean robot-1`,
     );
 
     res.status(200).json({
@@ -133,7 +167,6 @@ export const fetchAndClearCommands = async (
     const queue = commandQueueStorage.get(id) || [];
     const pendingCommands = queue.filter((cmd) => cmd.status === "PENDING");
 
-    // Kosongkan antrean setelah diambil oleh plugin
     commandQueueStorage.set(id, []);
 
     res.status(200).json({
