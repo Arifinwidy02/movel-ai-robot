@@ -68,7 +68,11 @@ export default function RobotViewer({ telemetry }: RobotViewerProps) {
 
     ctx.font = "11px monospace";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText(`(${telemetry.position.x.toFixed(1)}, ${telemetry.position.y.toFixed(1)})`, px + 14, py - 6);
+    ctx.fillText(
+      `(${telemetry.position.x.toFixed(1)}, ${telemetry.position.y.toFixed(1)})`,
+      px + 14,
+      py - 6,
+    );
   }, [telemetry]);
 
   return (
@@ -98,7 +102,8 @@ const S = {
     alignItems: "center",
     position: "relative" as const,
     overflow: "hidden",
-    boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
+    boxShadow:
+      "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
     minHeight: "300px",
     height: "100%",
     boxSizing: "border-box" as const,

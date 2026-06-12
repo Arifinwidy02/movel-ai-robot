@@ -133,6 +133,9 @@ export default function RobotDashboard() {
   }, [robotId]);
 
   const sendCommand = async (action: string) => {
+    setIsOnline(true);
+    clearTimeout(staleRef.current);
+    staleRef.current = setTimeout(() => setIsOnline(false), 5000);
     try {
       const response = await fetch(`${BACKEND_URL}/api/robot/command`, {
         method: "POST",
@@ -189,6 +192,9 @@ export default function RobotDashboard() {
       const key = e.key.toLowerCase();
       if (["w", "a", "s", "d"].includes(key)) {
         setPressedKey(key);
+        setIsOnline(true);
+        clearTimeout(staleRef.current);
+        staleRef.current = setTimeout(() => setIsOnline(false), 5000);
         sendCommand(key);
       }
     };
@@ -197,6 +203,9 @@ export default function RobotDashboard() {
       const key = e.key.toLowerCase();
       if (["w", "a", "s", "d"].includes(key)) {
         setPressedKey(null);
+        setIsOnline(true);
+        clearTimeout(staleRef.current);
+        staleRef.current = setTimeout(() => setIsOnline(false), 5000);
         sendCommand("STOP");
       }
     };
