@@ -1,0 +1,14 @@
+# Mengabaikan semua node_modules di sub-folder tingkat mana pun
+**/node_modules/
+.bun/
+
+# Mengabaikan environment variables agar aman
+**.env
+**.env.local
+
+# Mengabaikan log sampah bawaan Mac
+.DS_Store
+
+# Mengabaikan hasil build/dist jika ada
+**/dist/
+**/build/
