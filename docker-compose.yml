@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   web-ros:
     image: registry.gitlab.com/movelai_public/assignment/web_ros:1.0.0
